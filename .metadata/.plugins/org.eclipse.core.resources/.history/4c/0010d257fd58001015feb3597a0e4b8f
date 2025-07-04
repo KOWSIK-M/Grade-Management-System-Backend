@@ -1,0 +1,16 @@
+package com.klef.gms;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+@ComponentScan("com.klef.gms")
+@EntityScan("com.klef.gms.model")
+@EnableJpaRepositories("com.klef.gms.repo")
+public class GradeManagementSystemApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(GradeManagementSystemApplication.class, args);
+	}
+
+}
