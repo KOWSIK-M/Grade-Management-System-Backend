@@ -1,7 +1,0 @@
-INDEX VERSION 1.4+D:\Evaluation management System\.metadata\.plugins\org.eclipse.wst.jsdt.core\indexes
-1808510418.index
-1207446933.index
-1344591841.index
-1190108094.index
-3291332968.index
-154014154.index

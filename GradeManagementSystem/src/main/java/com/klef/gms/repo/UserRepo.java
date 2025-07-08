@@ -10,4 +10,5 @@ import com.klef.gms.model.User;
 @Repository
 public interface UserRepo extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
+    User findUserByEmail(String email);
 }
