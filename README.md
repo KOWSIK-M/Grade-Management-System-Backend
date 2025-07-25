@@ -68,7 +68,7 @@ Teachers/interviewers should be able to:
 
 ### Frontend Setup
 
-1. Navigate to the [frontend directory]{https://github.com/KOWSIK-M/Grade-Management-System-Frontend} .
+1. Navigate to the [frontend directory](https://github.com/KOWSIK-M/Grade-Management-System-Frontend) .
 2. Install dependencies:
    ```shell
    npm install
