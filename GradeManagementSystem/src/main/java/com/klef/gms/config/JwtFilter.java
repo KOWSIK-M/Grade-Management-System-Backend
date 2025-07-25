@@ -7,6 +7,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -33,38 +34,50 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
         String token = null;
         String useremail = null;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            // 🔐 Try getting token from cookie
-            if (request.getCookies() != null) {
-                for (Cookie cookie : request.getCookies()) {
-                    if (cookie.getName().equals("jwt")) {
-                        token = cookie.getValue();
-                        useremail = jwtservice.extractUserName(token);
-                        System.out.println("JWT from Cookie - Email: " + useremail + ", Token: " + token);
-                        break;
-                    }
+        // Extract JWT from Header or Cookie
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        } else if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookie.getName().equals("jwt")) {
+                    token = cookie.getValue();
+                    break;
                 }
             }
-        } else {
-            token = authHeader.substring(7);
-            useremail = jwtservice.extractUserName(token);
-            System.out.println("JWT from Header - Email: " + useremail + ", Token: " + token);
         }
 
+        // Extract user email from token
+        if (token != null) {
+            try {
+                useremail = jwtservice.extractUserName(token);
+                System.out.println("✅ JWT Email Extracted: " + useremail);
+            } catch (Exception e) {
+                System.out.println("❌ Failed to extract username from token: " + e.getMessage());
+            }
+        }
+
+        // Authenticate only if username extracted and not already authenticated
         if (useremail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = context.getBean(MyUserDetailsService.class)
-                                             .loadUserByUsername(useremail);
+            try {
+                MyUserDetailsService userDetailsService = context.getBean(MyUserDetailsService.class);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(useremail);
 
-            if (jwtservice.validateToken(token, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (jwtservice.validateToken(token, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("✅ JWT Authentication Successful for: " + useremail);
+                }
+            } catch (UsernameNotFoundException e) {
+                System.out.println("❌ UserNotFoundException: " + useremail);
+                // Optionally: response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User not found");
+            } catch (Exception e) {
+                System.out.println("❌ Error during authentication: " + e.getMessage());
             }
         }
 

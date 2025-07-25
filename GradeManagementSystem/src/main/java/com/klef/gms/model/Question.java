@@ -23,6 +23,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import jakarta.validation.constraints.*;
+
 @Entity
 @Table(name = "questions")
 @Data
@@ -35,24 +37,31 @@ public class Question {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Title must not be blank")
+    @Size(max = 255, message = "Title cannot be longer than 255 characters")
     private String title;
 
+    @NotBlank(message = "Type must not be blank")
     private String type;
 
     @ManyToOne
     @JoinColumn(name = "subject_id")
+    @NotNull(message = "Subject must not be null")
     private Subject subject;
 
     @ManyToOne
     @JoinColumn(name = "department_id")
+    @NotNull(message = "Department must not be null")
     private Department department;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "created_by")
+    @NotNull(message = "Created by user must not be null")
     private User createdBy;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
+    @Size(min = 1, message = "At least one option is required")
     private List<Option> options;
 
     @Column(nullable = false, updatable = false)
@@ -61,6 +70,12 @@ public class Question {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = new Date();
+        try {
+            this.createdAt = new Date();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            // If exception occurs, fallback to current time
+            this.createdAt = new Date(System.currentTimeMillis());
+        }
     }
 }

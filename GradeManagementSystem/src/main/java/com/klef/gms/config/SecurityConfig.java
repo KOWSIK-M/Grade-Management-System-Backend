@@ -51,16 +51,31 @@ public class SecurityConfig {
             			    "/api/auth/signin",
             			    "/api/auth/me",
             			    "/api/auth/verify",
-            			    "/api/auth/logout",
+            			    "/api/auth/request-reset",
+            			    "/api/auth/verify-reset-otp",
+            			    "/api/auth/reset-password",
             			    "/login**",
             			    "/oauth2/**",
-            			    "/api/questions/latest",
             			    "/api/questions/question-types",
-            			    "/api/subjects",
+            			    "/api/subjects/**",
+            			    "/api/subjects/subject-types",
             			    "/api/departments/**",
-            			    "/api/questions/add"
+            			    "/api/questions/**",
+            			    "/api/questions/add",
+            			    "/api/questions/my-questions",
+            			    "/api/auth/users-count",
+            			    "/api/auth/profile",
+            			    "/api/questions/questions-count",
+            			    "/api/subjects/subjects-count",
+        					"/api/auth/profile/image",
+        					"/api/auth/profile/image/"
             			).permitAll()
-            			.requestMatchers( "/api/questions/**").authenticated()
+            			.requestMatchers( 
+            					"/api/questions/**",
+                			    "/api/questions/latest",
+                			    "/api/auth/logout"
+            			).authenticated()
+            			
 
             )
             .exceptionHandling(exception -> exception
@@ -75,8 +90,10 @@ public class SecurityConfig {
                 .successHandler(successHandler)
             );
             http.httpBasic(Customizer.withDefaults());
-    		http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));	
+            http.sessionManagement(session -> session
+            	    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
     		http.addFilterBefore(jwtFilter,UsernamePasswordAuthenticationFilter.class);
+    		http.authenticationProvider(authenticationProvider());
 
         return http.build();
     }

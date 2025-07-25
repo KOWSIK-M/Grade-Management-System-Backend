@@ -1,14 +1,13 @@
 package com.klef.gms.controller;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.klef.gms.model.Department;
 import com.klef.gms.model.Subject;
@@ -24,46 +23,94 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class SubjectController {
-	 private final SubjectService subjectService;
-	 private final DepartmentRepo departmentRepo;
-	 private final SubjectRepo subjectRepo;
 
-	    @GetMapping
-	    public List<Subject> getAllSubjects() {
-	        return subjectService.findAll();
-	    }
+    private static final Logger logger = LoggerFactory.getLogger(SubjectController.class);
 
-	    @PostMapping
-	    public Subject createSubject(@RequestBody Map<String, String> request) {
-	        String name = request.get("name");
-	        String typeStr = request.get("type");
-	        String deptIdStr = request.get("departmentId");
+    private final SubjectService subjectService;
+    private final DepartmentRepo departmentRepo;
+    private final SubjectRepo subjectRepo;
 
-	        if (deptIdStr == null || deptIdStr.trim().isEmpty()) {
-	            throw new IllegalArgumentException("Department ID is required");
-	        }
+    @GetMapping
+    public ResponseEntity<?> getAllSubjects() {
+        logger.info("Received request to fetch all subjects.");
+        try {
+            List<Subject> subjects = subjectService.findAll();
+            logger.info("Fetched {} subjects.", subjects.size());
+            return ResponseEntity.ok(subjects);
+        } catch (Exception ex) {
+            logger.error("Error while fetching subjects: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).body("Unable to fetch subjects at this time.");
+        }
+    }
 
-	        Long deptId = Long.parseLong(deptIdStr);
+    @PostMapping
+    public ResponseEntity<?> createSubject(@RequestBody Map<String, String> request) {
+        logger.info("Received request to create a new subject.");
+        try {
+            String name = request.get("name");
+            String typeStr = request.get("type");
+            String deptIdStr = request.get("departmentId");
 
-	        Department dept = departmentRepo.findById(deptId)
-	            .orElseThrow(() -> new RuntimeException("Department not found"));
+            if (deptIdStr == null || deptIdStr.trim().isEmpty()) {
+                logger.warn("Department ID is missing in the request.");
+                return ResponseEntity.badRequest().body("Department ID is required");
+            }
 
-	        SubjectType type;
-	        try {
-	            type = SubjectType.valueOf(typeStr.toUpperCase()); // Convert string to ENUM safely
-	        } catch (IllegalArgumentException e) {
-	            throw new RuntimeException("Invalid subject type. Allowed: " + java.util.Arrays.toString(SubjectType.values()));
-	        }
+            Long deptId = Long.parseLong(deptIdStr);
 
-	        Subject subject = Subject.builder()
-	            .name(name)
-	            .type(type)
-	            .department(dept)
-	            .build();
+            Department dept = departmentRepo.findById(deptId)
+                .orElseThrow(() -> {
+                    logger.warn("Department not found for ID: {}", deptId);
+                    return new RuntimeException("Department not found");
+                });
 
-	        return subjectRepo.save(subject);
-	    }
+            SubjectType type;
+            try {
+                type = SubjectType.valueOf(typeStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                logger.warn("Invalid subject type provided: {}", typeStr);
+                return ResponseEntity.badRequest()
+                        .body("Invalid subject type. Allowed: " + java.util.Arrays.toString(SubjectType.values()));
+            }
 
+            Subject subject = Subject.builder()
+                .name(name)
+                .type(type)
+                .department(dept)
+                .build();
 
+            Subject saved = subjectRepo.save(subject);
+            logger.info("Subject created successfully with ID: {}", saved.getId());
+            return ResponseEntity.status(201).body(saved);
+        } catch (Exception ex) {
+            logger.error("Error while creating subject: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).body("Failed to create subject. Please try again.");
+        }
+    }
 
+    @GetMapping("/subject-types")
+    public ResponseEntity<?> getSubjectTypes() {
+        logger.info("Received request to fetch subject types.");
+        try {
+            SubjectType[] types = SubjectType.values();
+            logger.info("Fetched {} subject types.", types.length);
+            return ResponseEntity.ok(types);
+        } catch (Exception ex) {
+            logger.error("Error while fetching subject types: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).body("Unable to fetch subject types at this time.");
+        }
+    }
+
+    @GetMapping("/subjects-count")
+    public ResponseEntity<?> getSubjectCount() {
+        logger.info("Received request to fetch subject count.");
+        try {
+            long count = subjectService.subjectCount();
+            logger.info("Total subjects count: {}", count);
+            return ResponseEntity.ok(Collections.singletonMap("subjectCount", count));
+        } catch (Exception ex) {
+            logger.error("Error while fetching subject count: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).body("Unable to fetch subject count at this time.");
+        }
+    }
 }
