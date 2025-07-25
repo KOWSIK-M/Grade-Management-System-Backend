@@ -45,12 +45,12 @@ Teachers/interviewers should be able to:
 
 ## Frontend Architecture
 
-- **Frameworks:** Next.js, React.js
-- **Design:** Multiple UI designs generated using AI tools (e.g., Lovable, Gemini)
+- **Frameworks:** React.js
+- **Design:** Modernized UI following Industrial Standards
 - **Design Rationale:** Each design is explained for usability and aesthetics
 - **Event Instrumentation:** All user actions are tracked for analytics and debugging
 - **Debugging:** Tools and practices for effective debugging during interviews
-- **Industry Standards:** Follows best practices recommended by AI tools (ChatGPT, Gemini)
+- **Industry Standards:** Follows best practices.
 
 ---
 
@@ -68,7 +68,7 @@ Teachers/interviewers should be able to:
 
 ### Frontend Setup
 
-1. Navigate to the frontend directory (if available).
+1. Navigate to the [frontend directory]{https://github.com/KOWSIK-M/Grade-Management-System-Frontend} .
 2. Install dependencies:
    ```shell
    npm install
